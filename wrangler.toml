@@ -1,0 +1,7 @@
+name = "pilot"
+compatibility_date = "2026-05-12"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+HACKCLUB_MODEL = "openai/gpt-4o-mini"
