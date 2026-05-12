@@ -61,7 +61,7 @@ const worker = {
           );
         }
 
-        const MODEL = env.HACKCLUB_MODEL ?? "openai/gpt-4o-mini";
+        const model = env.HACKCLUB_MODEL ?? "openai/gpt-4o-mini";
 
         const openrouter = createOpenRouter({
           apiKey,
@@ -69,7 +69,7 @@ const worker = {
         });
 
         const result = streamText({
-          model: openrouter(MODEL),
+          model: openrouter(model),
           messages: await convertToModelMessages(messages),
           tools: {
             webSearch: createWebSearchTool(searchKey),
@@ -102,7 +102,12 @@ const worker = {
       }
     }
 
-    return env.ASSETS.fetch(request);
+    try {
+      return await env.ASSETS.fetch(request);
+    } catch (error) {
+      console.error("Failed to serve static asset", error);
+      return new Response("Failed to serve static asset.", { status: 500 });
+    }
   },
 };
 
