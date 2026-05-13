@@ -4,6 +4,7 @@
  */
 
 const HACKCLUB_API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
+const SSE_DATA_PREFIX = "data:";
 
 export class HackClubClient {
   constructor(apiKey) {
@@ -90,6 +91,18 @@ export class HackClubClient {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
+        const appendChunkContent = (dataLine) => {
+          try {
+            const parsed = JSON.parse(dataLine);
+            const content = parsed.choices[0]?.delta?.content || '';
+            if (content) {
+              fullContent += content;
+              onChunk(content);
+            }
+          } catch (error) {
+            console.warn("Failed to parse SSE data chunk:", error);
+          }
+        };
 
         try {
           while (true) {
@@ -102,38 +115,19 @@ export class HackClubClient {
 
             for (const line of lines) {
               const trimmed = line.trim();
-              if (trimmed.startsWith('data:')) {
-                const data = trimmed.slice(5).trim();
+              if (trimmed.startsWith(SSE_DATA_PREFIX)) {
+                const data = trimmed.slice(SSE_DATA_PREFIX.length).trim();
                 if (data === '[DONE]') continue;
-
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices[0]?.delta?.content || '';
-                  if (content) {
-                    fullContent += content;
-                    onChunk(content);
-                  }
-                } catch (e) {
-                  // Ignore parse errors
-                }
+                appendChunkContent(data);
               }
             }
           }
 
           const remaining = buffer.trim();
-          if (remaining.startsWith('data:')) {
-            const data = remaining.slice(5).trim();
+          if (remaining.startsWith(SSE_DATA_PREFIX)) {
+            const data = remaining.slice(SSE_DATA_PREFIX.length).trim();
             if (data && data !== '[DONE]') {
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices[0]?.delta?.content || '';
-                if (content) {
-                  fullContent += content;
-                  onChunk(content);
-                }
-              } catch (e) {
-                // Ignore parse errors
-              }
+              appendChunkContent(data);
             }
           }
         } finally {
