@@ -114,19 +114,21 @@ export class HackClubClient {
             buffer = lines.pop() || "";
 
             for (const line of lines) {
-              const trimmed = line.trim();
-              if (trimmed.startsWith(SSE_DATA_PREFIX)) {
-                const data = trimmed.slice(SSE_DATA_PREFIX.length).trim();
-                if (data === '[DONE]') continue;
+              const normalizedLine = line.trimStart();
+              if (normalizedLine.startsWith(SSE_DATA_PREFIX)) {
+                let data = normalizedLine.slice(SSE_DATA_PREFIX.length);
+                if (data.startsWith(" ")) data = data.slice(1);
+                if (data.trim() === '[DONE]') continue;
                 appendChunkContent(data);
               }
             }
           }
 
-          const remaining = buffer.trim();
+          const remaining = buffer.trimStart();
           if (remaining.startsWith(SSE_DATA_PREFIX)) {
-            const data = remaining.slice(SSE_DATA_PREFIX.length).trim();
-            if (data && data !== '[DONE]') {
+            let data = remaining.slice(SSE_DATA_PREFIX.length);
+            if (data.startsWith(" ")) data = data.slice(1);
+            if (data && data.trim() !== '[DONE]') {
               appendChunkContent(data);
             }
           }
