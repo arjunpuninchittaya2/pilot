@@ -1,9 +1,9 @@
 /**
  * Hack Club API Client
- * Provides an interface to interact with the Hack Club AI API through a local proxy
+ * Provides an interface to interact with the Hack Club AI API directly from the browser
  */
 
-const PROXY_BASE_URL = "/api/proxy";
+const HACKCLUB_API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
 
 export class HackClubClient {
   constructor(apiKey) {
@@ -16,14 +16,12 @@ export class HackClubClient {
     }
 
     try {
-      const response = await fetch(`${PROXY_BASE_URL}/models`, {
-        method: "POST",
+      const response = await fetch(`${HACKCLUB_API_BASE_URL}/models`, {
+        method: "GET",
         headers: {
+          Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          apiKey: this.apiKey,
-        }),
+        }
       });
 
       if (!response.ok) {
@@ -60,13 +58,13 @@ export class HackClubClient {
     } = options;
 
     try {
-      const response = await fetch(`${PROXY_BASE_URL}/chat/completions`, {
+      const response = await fetch(`${HACKCLUB_API_BASE_URL}/chat/completions`, {
         method: "POST",
         headers: {
+          Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          apiKey: this.apiKey,
           messages,
           model,
           temperature,
@@ -84,21 +82,28 @@ export class HackClubClient {
 
       // Handle streaming response
       if (onChunk) {
+        if (!response.body) {
+          throw new Error("Empty streaming response body");
+        }
+
         let fullContent = "";
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let buffer = "";
 
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || "";
 
             for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data:')) {
+                const data = trimmed.slice(5).trim();
                 if (data === '[DONE]') continue;
 
                 try {
@@ -111,6 +116,23 @@ export class HackClubClient {
                 } catch (e) {
                   // Ignore parse errors
                 }
+              }
+            }
+          }
+
+          const remaining = buffer.trim();
+          if (remaining.startsWith('data:')) {
+            const data = remaining.slice(5).trim();
+            if (data && data !== '[DONE]') {
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices[0]?.delta?.content || '';
+                if (content) {
+                  fullContent += content;
+                  onChunk(content);
+                }
+              } catch (e) {
+                // Ignore parse errors
               }
             }
           }
