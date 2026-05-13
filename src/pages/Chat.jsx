@@ -174,10 +174,17 @@ export default function Chat() {
 
       // Call Hack Club API with the conversation history
       // Format messages for the API
-      const apiMessages = newMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      const apiMessages = newMessages.map((m) => {
+        const msg = {
+          role: m.role,
+          content: m.content,
+        };
+        // Include attachments if present
+        if (m.attachments && m.attachments.length > 0) {
+          msg.attachments = m.attachments;
+        }
+        return msg;
+      });
 
       let fullResponse = "";
       const response = await client.sendMessage(apiMessages, {
@@ -267,13 +274,13 @@ export default function Chat() {
         onNewChat={handleNewChat}
         onDeleteConversation={handleDelete}
         onRenameConversation={handleRename}
+        onSettingsClick={() => setApiKeyModalOpen(true)}
         userName={userName}
       />
 
       <div className="flex-1 flex flex-col min-w-0 relative">
         <ChatTopBar 
           title={convTitle} 
-          onShare={() => setShareOpen(true)}
           onApiKeyClick={() => setApiKeyModalOpen(true)}
         />
 

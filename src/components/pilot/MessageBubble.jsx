@@ -5,6 +5,13 @@ import PilotLogo from "./PilotLogo";
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === "user";
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyMessage = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"} mb-6`}>
@@ -26,32 +33,41 @@ export default function MessageBubble({ message }) {
           </div>
         )}
         {/* Content */}
-        <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-            isUser
-              ? "bg-secondary text-foreground"
-              : "text-foreground"
-          }`}
-        >
-          {isUser ? (
-            <p className="whitespace-pre-wrap">{message.content}</p>
-          ) : (
-            <div className="markdown-content">
-              <ReactMarkdown
-                components={{
-                  pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
-                  code: ({ inline, children, ...props }) => {
-                    if (inline) {
+        <div className="relative group">
+          <div
+            className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              isUser
+                ? "bg-secondary text-foreground"
+                : "text-foreground"
+            }`}
+          >
+            {isUser ? (
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            ) : (
+              <div className="markdown-content">
+                <ReactMarkdown
+                  components={{
+                    pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
+                    code: ({ inline, children, ...props }) => {
+                      if (inline) {
+                        return <code {...props}>{children}</code>;
+                      }
                       return <code {...props}>{children}</code>;
                     }
-                    return <code {...props}>{children}</code>;
-                  }
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
-            </div>
-          )}
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleCopyMessage}
+            className="absolute top-2 right-2 p-1.5 rounded-md bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Copy message"
+          >
+            {copied ? <CheckIcon className="w-3.5 h-3.5" /> : <CopyIcon className="w-3.5 h-3.5" />}
+          </button>
         </div>
         <div className="mt-1 px-1">
           <span className="text-[11px] text-muted-foreground">

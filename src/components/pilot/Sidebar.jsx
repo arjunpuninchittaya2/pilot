@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import PilotLogo from "./PilotLogo";
 import {
-  PanelLeftIcon, PlusIcon, SearchIcon, ChatIcon,
-  MoreHorizontalIcon, UserIcon, DownloadIcon, UploadIcon,
+  PanelLeftIcon, PlusIcon, ChatIcon,
+  MoreHorizontalIcon, UserIcon, SettingsIcon,
   TrashIcon, EditIcon
 } from "./Icons";
 import {
@@ -18,6 +18,7 @@ export default function Sidebar({
   onNewChat,
   onDeleteConversation,
   onRenameConversation,
+  onSettingsClick,
   userName
 }) {
   const [hoveredId, setHoveredId] = useState(null);
@@ -55,15 +56,11 @@ export default function Sidebar({
       {/* Nav Links */}
       {!collapsed && (
         <div className="px-2 space-y-0.5 mb-3">
-          <NavItem icon={<SearchIcon className="w-4 h-4" />} label="Search" />
           <NavItem icon={<ChatIcon className="w-4 h-4" />} label="Chats" active />
         </div>
       )}
       {collapsed && (
         <div className="px-2 space-y-0.5 mb-3 flex flex-col items-center">
-          <button className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-            <SearchIcon className="w-4 h-4" />
-          </button>
           <button className="p-2 rounded-md text-foreground bg-accent transition-colors">
             <ChatIcon className="w-4 h-4" />
           </button>
@@ -128,7 +125,7 @@ export default function Sidebar({
       )}
 
       {/* Bottom User Section */}
-      <div className={`border-t border-border p-3 ${collapsed ? "flex flex-col items-center gap-2" : ""}`}>
+      <div className={`border-t border-border p-3 space-y-2`}>
         <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"}`}>
           <div className={`flex items-center gap-2 ${collapsed ? "" : "flex-1 min-w-0"}`}>
             <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -138,17 +135,13 @@ export default function Sidebar({
               <span className="text-sm text-foreground truncate">{userName || "User"}</span>
             )}
           </div>
-          {!collapsed && (
-            <div className="flex items-center gap-1">
-              <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                <DownloadIcon className="w-3.5 h-3.5" />
-              </button>
-              <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                <UploadIcon className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
         </div>
+        <button 
+          onClick={onSettingsClick}
+          className={`flex items-center w-full ${collapsed ? "justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent" : "gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-accent"} transition-colors`}>
+          <SettingsIcon className="w-4 h-4 flex-shrink-0" />
+          {!collapsed && <span>Settings</span>}
+        </button>
       </div>
     </div>
   );

@@ -100,9 +100,15 @@ export function ArrowDownIcon({ className = "w-5 h-5" }) {
 
 export function SettingsIcon({ className = "w-5 h-5" }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3"/>
-      <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6m-3.78 7.78l-4.24-4.24m-2.12-2.12l-4.24-4.24"/>
+      <path d="M12 1v6m0 6v6"/>
+      <path d="M4.22 4.22l4.24 4.24"/>
+      <path d="M15.54 15.54l4.24 4.24"/>
+      <path d="M1 12h6"/>
+      <path d="M17 12h6"/>
+      <path d="M4.22 19.78l4.24-4.24"/>
+      <path d="M15.54 8.46l4.24-4.24"/>
     </svg>
   );
 }
