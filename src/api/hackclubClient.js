@@ -21,7 +21,7 @@ export class HackClubClient {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
-        }
+        },
       });
 
       if (!response.ok) {
