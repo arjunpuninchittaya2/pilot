@@ -4,7 +4,7 @@
  */
 
 const HACKCLUB_API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
-const SSE_DATA_PREFIX = "data:";
+const SSE_DATA_FIELD_PREFIX = "data:";
 
 export class HackClubClient {
   constructor(apiKey) {
@@ -91,6 +91,16 @@ export class HackClubClient {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
+        const parseSSEDataLine = (line) => {
+          const normalizedLine = line.trimStart();
+          if (!normalizedLine.startsWith(SSE_DATA_FIELD_PREFIX)) {
+            return null;
+          }
+          let data = normalizedLine.slice(SSE_DATA_FIELD_PREFIX.length);
+          if (data.startsWith(" ")) data = data.slice(1);
+          return data;
+        };
+
         const appendChunkContent = (dataLine) => {
           try {
             const parsed = JSON.parse(dataLine);
@@ -100,7 +110,7 @@ export class HackClubClient {
               onChunk(content);
             }
           } catch (error) {
-            console.warn("Failed to parse SSE data chunk:", error);
+            console.warn("Failed to parse SSE data chunk:", dataLine, error);
           }
         };
 
@@ -114,20 +124,15 @@ export class HackClubClient {
             buffer = lines.pop() || "";
 
             for (const line of lines) {
-              const normalizedLine = line.trimStart();
-              if (normalizedLine.startsWith(SSE_DATA_PREFIX)) {
-                let data = normalizedLine.slice(SSE_DATA_PREFIX.length);
-                if (data.startsWith(" ")) data = data.slice(1);
-                if (data.trim() === '[DONE]') continue;
-                appendChunkContent(data);
-              }
+              const data = parseSSEDataLine(line);
+              if (!data) continue;
+              if (data.trim() === '[DONE]') continue;
+              appendChunkContent(data);
             }
           }
 
-          const remaining = buffer.trimStart();
-          if (remaining.startsWith(SSE_DATA_PREFIX)) {
-            let data = remaining.slice(SSE_DATA_PREFIX.length);
-            if (data.startsWith(" ")) data = data.slice(1);
+          if (buffer) {
+            const data = parseSSEDataLine(buffer);
             if (data && data.trim() !== '[DONE]') {
               appendChunkContent(data);
             }
