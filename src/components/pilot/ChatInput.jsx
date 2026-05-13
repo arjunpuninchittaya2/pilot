@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useHackClub } from "@/lib/HackClubContext";
+import { toast } from "@/components/ui/use-toast";
 
 export default function ChatInput({ onSend, disabled }) {
   const { client } = useHackClub();
@@ -35,6 +36,10 @@ export default function ChatInput({ onSend, disabled }) {
       } catch (error) {
         console.error("Failed to load models:", error);
         setModels([]);
+        toast({
+          title: "Failed to load models",
+          description: error?.message ? String(error.message) : String(error),
+        });
       } finally {
         setLoadingModels(false);
       }
