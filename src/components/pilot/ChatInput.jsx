@@ -10,38 +10,23 @@ import {
 import { useHackClub } from "@/lib/HackClubContext";
 
 export default function ChatInput({ onSend, disabled }) {
-  const { client } = useHackClub();
+  const { favoriteModels, defaultFavoriteModel } = useHackClub();
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState([]);
-  const [models, setModels] = useState([]);
-  const [model, setModel] = useState("");
-  const [loadingModels, setLoadingModels] = useState(false);
+  const [model, setModel] = useState(defaultFavoriteModel);
   const [uploading, setUploading] = useState(false);
   const textareaRef = useRef(null);
   const fileRef = useRef(null);
 
   useEffect(() => {
-    const fetchModels = async () => {
-      if (!client) return;
-      try {
-        setLoadingModels(true);
-        const modelList = await client.getModels();
-        // Deduplicate and sort models to avoid duplicate React keys
-        const unique = Array.from(new Set(modelList)).sort();
-        setModels(unique);
-        if (unique.length > 0) {
-          setModel(unique[0]);
-        }
-      } catch (error) {
-        console.error("Failed to load models:", error);
-        setModels([]);
-      } finally {
-        setLoadingModels(false);
-      }
-    };
-
-    fetchModels();
-  }, [client]);
+    if (favoriteModels.length === 0) {
+      setModel(defaultFavoriteModel);
+      return;
+    }
+    if (!favoriteModels.includes(model)) {
+      setModel(favoriteModels[0]);
+    }
+  }, [favoriteModels, model, defaultFavoriteModel]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -133,16 +118,17 @@ export default function ChatInput({ onSend, disabled }) {
         <div className="flex items-center gap-1 flex-shrink-0 mb-0.5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                <span>{loadingModels ? "Loading..." : model || "No models"}</span>
-                <ChevronDownIcon className="w-3 h-3" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-popover border-border">
-              {models.map((m) => (
-                <DropdownMenuItem
-                  key={m}
-                  onClick={() => setModel(m)}
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <span className="sr-only">Select chat model</span>
+                  <span>{model || "No models"}</span>
+                  <ChevronDownIcon className="w-3 h-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover border-border max-h-72 overflow-y-auto">
+                {favoriteModels.map((m) => (
+                  <DropdownMenuItem
+                    key={m}
+                    onClick={() => setModel(m)}
                   className={`text-sm ${m === model ? "text-primary" : ""}`}
                 >
                   {m}
