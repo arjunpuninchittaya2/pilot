@@ -152,7 +152,7 @@ export default function ApiKeyModal({ open, onOpenChange }) {
                     <ChevronDownIcon className="w-4 h-4 flex-shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-popover border-border max-h-72 overflow-y-auto w-[var(--radix-dropdown-menu-trigger-width)]">
+                <DropdownMenuContent align="start" className="bg-popover border-border max-h-72 overflow-y-auto w-80 max-w-[var(--radix-dropdown-menu-trigger-width)] min-w-[var(--radix-dropdown-menu-trigger-width)]">
                   {modelOptions.map((modelName) => (
                     <DropdownMenuItem
                       key={modelName}

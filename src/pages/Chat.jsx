@@ -174,7 +174,7 @@ export default function Chat() {
 
       // Call Hack Club API with the conversation history
       // Format messages for the API
-      const formatAttachmentForApi = (attachment) => {
+      const formatAttachmentForApi = (attachment, index) => {
         const isImage = attachment.type?.startsWith("image/");
         if (isImage) {
           return {
@@ -185,7 +185,7 @@ export default function Chat() {
         const extension = attachment.type?.split("/")[1] || "bin";
         const randomId =
           globalThis.crypto?.randomUUID?.() ||
-          `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 10)}`;
         const fallbackFilename = `attachment-${randomId}.${extension}`;
         return {
           type: "file",
@@ -209,7 +209,7 @@ export default function Chat() {
         if (m.content && m.content.trim()) {
           contentItems.push({ type: "text", text: m.content });
         }
-        contentItems.push(...m.attachments.map(formatAttachmentForApi));
+        contentItems.push(...m.attachments.map((attachment, index) => formatAttachmentForApi(attachment, index)));
 
         return {
           role: m.role,
