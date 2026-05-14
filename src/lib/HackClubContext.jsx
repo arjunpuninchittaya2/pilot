@@ -8,7 +8,12 @@ const DEFAULT_FAVORITE_MODEL = '~anthropic/claude-sonnet-latest';
 const sanitizeFavoriteModels = (models) => {
   if (!Array.isArray(models)) return [DEFAULT_FAVORITE_MODEL];
   const unique = Array.from(
-    new Set(models.filter((model) => typeof model === 'string' && model.trim()).map((model) => model.trim()))
+    new Set(
+      models
+        .filter((model) => typeof model === 'string')
+        .map((model) => model.trim())
+        .filter(Boolean)
+    )
   );
   return unique.length > 0 ? unique : [DEFAULT_FAVORITE_MODEL];
 };

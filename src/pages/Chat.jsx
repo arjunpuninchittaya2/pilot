@@ -182,10 +182,12 @@ export default function Chat() {
             image_url: { url: attachment.url },
           };
         }
+        const extension = attachment.type?.split("/")[1] || "bin";
+        const fallbackFilename = `attachment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
         return {
           type: "file",
           file: {
-            filename: attachment.name || "attachment",
+            filename: attachment.name || fallbackFilename,
             file_data: attachment.url,
           },
         };
