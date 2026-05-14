@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,19 +10,65 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDownIcon, CloseIcon } from '@/components/pilot/Icons';
 import { useHackClub } from '@/lib/HackClubContext';
 
 export default function ApiKeyModal({ open, onOpenChange }) {
-  const { apiKey: savedApiKey, saveApiKey } = useHackClub();
+  const {
+    apiKey: savedApiKey,
+    saveApiKey,
+    client,
+    favoriteModels,
+    setFavoriteModels,
+    defaultFavoriteModel,
+  } = useHackClub();
   const [apiKey, setApiKey] = useState(savedApiKey || '');
   const [error, setError] = useState('');
+  const [allModels, setAllModels] = useState([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(defaultFavoriteModel);
 
   useEffect(() => {
-    if (open) {
-      setApiKey(savedApiKey || '');
-      setError('');
-    }
+    if (!open) return;
+    setApiKey(savedApiKey || '');
   }, [open, savedApiKey]);
+
+  useEffect(() => {
+    if (!open || !client) return;
+
+    const fetchModels = async () => {
+      try {
+        setLoadingModels(true);
+        const modelList = await client.getModels();
+        const unique = Array.from(new Set(modelList)).sort();
+        setAllModels(unique);
+      } catch (fetchError) {
+        console.error('Failed to load models:', fetchError);
+        setAllModels([]);
+      } finally {
+        setLoadingModels(false);
+      }
+    };
+
+    fetchModels();
+  }, [open, client]);
+
+  useEffect(() => {
+    if (!open) return;
+    const preferred = favoriteModels[0] || defaultFavoriteModel;
+    setSelectedModel(preferred);
+  }, [open, favoriteModels, defaultFavoriteModel]);
+
+  const modelOptions = useMemo(() => {
+    const base = [defaultFavoriteModel, ...allModels];
+    return Array.from(new Set(base.filter(Boolean))).sort();
+  }, [allModels, defaultFavoriteModel]);
 
   const handleSave = () => {
     if (!apiKey.trim()) {
@@ -33,6 +79,16 @@ export default function ApiKeyModal({ open, onOpenChange }) {
     // Save the key without validation - will fail on first message if invalid
     saveApiKey(apiKey.trim());
     onOpenChange(false);
+  };
+
+  const handleAddFavoriteModel = () => {
+    if (!selectedModel) return;
+    if (favoriteModels.includes(selectedModel)) return;
+    setFavoriteModels([...favoriteModels, selectedModel]);
+  };
+
+  const handleRemoveFavoriteModel = (modelToRemove) => {
+    setFavoriteModels(favoriteModels.filter((m) => m !== modelToRemove));
   };
 
   const handleKeyDown = (e) => {
@@ -79,6 +135,57 @@ export default function ApiKeyModal({ open, onOpenChange }) {
             <p className="text-xs text-gray-500">
               Your API key is stored locally in your browser and never sent to third parties.
             </p>
+          </div>
+          <div className="grid gap-2">
+            <Label>Favorite Models</Label>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Select a model to add to favorites"
+                    className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-left"
+                  >
+                    <span className="truncate">
+                      {loadingModels ? 'Loading models...' : selectedModel}
+                    </span>
+                    <ChevronDownIcon className="w-4 h-4 flex-shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-popover border-border max-h-72 overflow-y-auto w-80 max-w-[var(--radix-dropdown-menu-trigger-width)] min-w-[var(--radix-dropdown-menu-trigger-width)]">
+                  {modelOptions.map((modelName) => (
+                    <DropdownMenuItem
+                      key={modelName}
+                      onClick={() => setSelectedModel(modelName)}
+                      className="text-sm"
+                    >
+                      {modelName}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button type="button" variant="outline" onClick={handleAddFavoriteModel}>
+                Add
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+              {favoriteModels.map((favoriteModel) => (
+                <div
+                  key={favoriteModel}
+                  className="flex items-center gap-1.5 bg-secondary rounded-lg px-2.5 py-1 text-xs"
+                >
+                  <span className="max-w-[220px] truncate">{favoriteModel}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFavoriteModel(favoriteModel)}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label={`Remove ${favoriteModel} from favorites`}
+                  >
+                    <CloseIcon className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

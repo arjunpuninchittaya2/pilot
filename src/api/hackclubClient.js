@@ -1,5 +1,11 @@
 /**
  * Hack Club API Client
+ * Provides an interface to interact with the Hack Club AI API directly from the browser
+ */
+
+const HACKCLUB_API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
+const SSE_DATA_FIELD_PREFIX = "data:";
+const DEFAULT_MODEL = "~anthropic/claude-sonnet-latest";
  * Direct browser calls to the Hack Club AI API.
  *
  * Note: this exposes the API key to the client and depends on the upstream
@@ -75,9 +81,14 @@ export class HackClubClient {
     }
 
     try {
-      const response = await fetch(buildRequestUrl("/models"), {
-        method: "GET",
-        headers: buildHeaders(this.apiKey),
+      const response = await fetch(`${PROXY_BASE_URL}/models`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          apiKey: this.apiKey,
+        }),
       });
 
       if (!response.ok) {
@@ -104,21 +115,25 @@ export class HackClubClient {
     }
 
     const {
-      model = "qwen/qwen3-32b",
+      model = DEFAULT_MODEL,
       temperature = 0.7,
       max_tokens = 2000,
+      plugins = undefined,
       onChunk = null, // Callback for streaming chunks
     } = options;
 
     try {
-      const response = await fetch(buildRequestUrl("/chat/completions"), {
+      const response = await fetch(`${PROXY_BASE_URL}/chat/completions`, {
         method: "POST",
-        headers: buildHeaders(this.apiKey),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           messages,
           model,
           temperature,
           max_tokens,
+          ...(plugins ? { plugins } : {}),
           stream: !!onChunk, // Enable streaming if callback provided
         }),
       });
@@ -129,34 +144,58 @@ export class HackClubClient {
 
       // Handle streaming response
       if (onChunk) {
+        if (!response.body) {
+          throw new Error("Empty streaming response body");
+        }
+
         let fullContent = "";
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let buffer = "";
+        const parseSSEDataLine = (line) => {
+          const normalizedLine = line.trimStart();
+          if (!normalizedLine.startsWith(SSE_DATA_FIELD_PREFIX)) {
+            return null;
+          }
+          let data = normalizedLine.slice(SSE_DATA_FIELD_PREFIX.length);
+          if (data.startsWith(" ")) data = data.slice(1);
+          return data;
+        };
+
+        const appendChunkContent = (dataLine) => {
+          try {
+            const parsed = JSON.parse(dataLine);
+            const content = parsed.choices[0]?.delta?.content || '';
+            if (content) {
+              fullContent += content;
+              onChunk(content);
+            }
+          } catch (error) {
+            console.warn("Failed to parse SSE data chunk:", dataLine, error);
+          }
+        };
 
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || "";
 
             for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') continue;
+              const data = parseSSEDataLine(line);
+              if (!data) continue;
+              if (data.trim() === '[DONE]') continue;
+              appendChunkContent(data);
+            }
+          }
 
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices[0]?.delta?.content || '';
-                  if (content) {
-                    fullContent += content;
-                    onChunk(content);
-                  }
-                } catch (e) {
-                  // Ignore parse errors
-                }
-              }
+          if (buffer) {
+            const data = parseSSEDataLine(buffer);
+            if (data && data.trim() !== '[DONE]') {
+              appendChunkContent(data);
             }
           }
         } finally {
