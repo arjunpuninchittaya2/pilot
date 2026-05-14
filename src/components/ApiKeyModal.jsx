@@ -143,6 +143,7 @@ export default function ApiKeyModal({ open, onOpenChange }) {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
+                    aria-label="Select a model to add to favorites"
                     className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-left"
                   >
                     <span className="truncate">

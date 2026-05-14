@@ -183,7 +183,10 @@ export default function Chat() {
           };
         }
         const extension = attachment.type?.split("/")[1] || "bin";
-        const fallbackFilename = `attachment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+        const randomId =
+          globalThis.crypto?.randomUUID?.() ||
+          `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const fallbackFilename = `attachment-${randomId}.${extension}`;
         return {
           type: "file",
           file: {
@@ -214,12 +217,20 @@ export default function Chat() {
         };
       });
 
+      const hasFileAttachments = apiMessages.some(
+        (m) =>
+          Array.isArray(m.content) &&
+          m.content.some((item) => item?.type === "file")
+      );
+
       let fullResponse = "";
       const response = await client.sendMessage(apiMessages, {
         model: model,
         temperature: 0.7,
         max_tokens: 2000,
-        plugins: attachments.length > 0 ? [{ id: "file-parser", pdf: { engine: "native" } }] : undefined,
+        plugins: hasFileAttachments
+          ? [{ id: "file-parser", pdf: { engine: "native" } }]
+          : undefined,
         onChunk: (chunk) => {
           fullResponse += chunk;
           // Update the assistant message in real-time

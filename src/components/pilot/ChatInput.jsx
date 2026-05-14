@@ -119,6 +119,7 @@ export default function ChatInput({ onSend, disabled }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <span className="sr-only">Select chat model</span>
                   <span>{model || "No models"}</span>
                   <ChevronDownIcon className="w-3 h-3" />
                 </button>
