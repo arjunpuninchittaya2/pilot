@@ -61,7 +61,7 @@ app.post('/api/proxy/chat/completions', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model || 'qwen/qwen3-32b',
+        model: model || '~anthropic/claude-sonnet-latest',
         messages,
         temperature: temperature || 0.7,
         max_tokens: max_tokens || 2000,

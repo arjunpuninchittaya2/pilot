@@ -5,6 +5,7 @@
 
 const HACKCLUB_API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
 const SSE_DATA_FIELD_PREFIX = "data:";
+const DEFAULT_MODEL = "~anthropic/claude-sonnet-latest";
 
 export class HackClubClient {
   constructor(apiKey) {
@@ -52,9 +53,10 @@ export class HackClubClient {
     }
 
     const {
-      model = "qwen/qwen3-32b",
+      model = DEFAULT_MODEL,
       temperature = 0.7,
       max_tokens = 2000,
+      plugins = undefined,
       onChunk = null, // Callback for streaming chunks
     } = options;
 
@@ -70,6 +72,7 @@ export class HackClubClient {
           model,
           temperature,
           max_tokens,
+          ...(plugins ? { plugins } : {}),
           stream: !!onChunk, // Enable streaming if callback provided
         }),
       });

@@ -32,7 +32,7 @@ const USERNAME_STORAGE_KEY = "pilot_username";
  */
 
 export default function Chat() {
-  const { isApiKeySet, client, saveApiKey } = useHackClub();
+  const { isApiKeySet, client } = useHackClub();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeConvId, setActiveConvId] = useState(null);
   const [localMessages, setLocalMessages] = useState(/** @type {Message[]} */[]);
@@ -174,16 +174,42 @@ export default function Chat() {
 
       // Call Hack Club API with the conversation history
       // Format messages for the API
-      const apiMessages = newMessages.map((m) => {
-        const msg = {
-          role: m.role,
-          content: m.content,
-        };
-        // Include attachments if present
-        if (m.attachments && m.attachments.length > 0) {
-          msg.attachments = m.attachments;
+      const formatAttachmentForApi = (attachment) => {
+        const isImage = attachment.type?.startsWith("image/");
+        if (isImage) {
+          return {
+            type: "image_url",
+            image_url: { url: attachment.url },
+          };
         }
-        return msg;
+        return {
+          type: "file",
+          file: {
+            filename: attachment.name || "attachment",
+            file_data: attachment.url,
+          },
+        };
+      };
+
+      const apiMessages = newMessages.map((m) => {
+        const hasAttachments = m.attachments && m.attachments.length > 0;
+        if (!hasAttachments) {
+          return {
+            role: m.role,
+            content: m.content,
+          };
+        }
+
+        const contentItems = [];
+        if (m.content && m.content.trim()) {
+          contentItems.push({ type: "text", text: m.content });
+        }
+        contentItems.push(...m.attachments.map(formatAttachmentForApi));
+
+        return {
+          role: m.role,
+          content: contentItems,
+        };
       });
 
       let fullResponse = "";
@@ -191,6 +217,7 @@ export default function Chat() {
         model: model,
         temperature: 0.7,
         max_tokens: 2000,
+        plugins: attachments.length > 0 ? [{ id: "file-parser", pdf: { engine: "native" } }] : undefined,
         onChunk: (chunk) => {
           fullResponse += chunk;
           // Update the assistant message in real-time
