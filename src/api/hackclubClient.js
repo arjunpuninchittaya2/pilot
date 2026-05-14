@@ -1,9 +1,68 @@
 /**
  * Hack Club API Client
- * Provides an interface to interact with the Hack Club AI API through a local proxy
+ * Direct browser calls to the Hack Club AI API.
+ *
+ * Note: this exposes the API key to the client and depends on the upstream
+ * API allowing CORS from the current origin.
  */
 
-const PROXY_BASE_URL = "/api/proxy";
+const API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
+const DEBUG_CORS_PROXY = import.meta.env.VITE_DEBUG_CORS_PROXY || "";
+
+const normalizeProxyPrefix = (value) => {
+  if (!value) return "";
+  return value.endsWith("/") ? value : `${value}/`;
+};
+
+const PROXY_PREFIX = normalizeProxyPrefix(DEBUG_CORS_PROXY);
+
+const CORS_ANYWHERE_DEMO_URL = "https://cors-anywhere.herokuapp.com/corsdemo";
+
+const buildRequestUrl = (path) => {
+  const directUrl = `${API_BASE_URL}${path}`;
+  return PROXY_PREFIX ? `${PROXY_PREFIX}${directUrl}` : directUrl;
+};
+
+const buildHeaders = (apiKey) => {
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  // Helpful for quick debugging with cors-anywhere style proxies.
+  if (PROXY_PREFIX) {
+    headers["x-requested-with"] = "XMLHttpRequest";
+  }
+
+  return headers;
+};
+
+const buildErrorMessage = async (response) => {
+  const rawText = await response.text().catch(() => "");
+  let parsedError = "";
+
+  try {
+    const json = rawText ? JSON.parse(rawText) : {};
+    parsedError = json.error || json.message || "";
+  } catch {
+    parsedError = rawText;
+  }
+
+  const normalized = String(parsedError || "").toLowerCase();
+  const isCorsAnywhereBlocked =
+    PROXY_PREFIX.includes("cors-anywhere") &&
+    (response.status === 403 || response.status === 303 || normalized.includes("/corsdemo"));
+
+  if (isCorsAnywhereBlocked) {
+    return `API Error: ${response.status} ${response.statusText}. Enable temporary access at ${CORS_ANYWHERE_DEMO_URL} and retry.`;
+  }
+
+  if (parsedError) {
+    return String(parsedError);
+  }
+
+  return `API Error: ${response.status} ${response.statusText}`;
+};
 
 export class HackClubClient {
   constructor(apiKey) {
@@ -16,21 +75,13 @@ export class HackClubClient {
     }
 
     try {
-      const response = await fetch(`${PROXY_BASE_URL}/models`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          apiKey: this.apiKey,
-        }),
+      const response = await fetch(buildRequestUrl("/models"), {
+        method: "GET",
+        headers: buildHeaders(this.apiKey),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `API Error: ${response.status} ${response.statusText}`
-        );
+        throw new Error(await buildErrorMessage(response));
       }
 
       const data = await response.json();
@@ -60,13 +111,10 @@ export class HackClubClient {
     } = options;
 
     try {
-      const response = await fetch(`${PROXY_BASE_URL}/chat/completions`, {
+      const response = await fetch(buildRequestUrl("/chat/completions"), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: buildHeaders(this.apiKey),
         body: JSON.stringify({
-          apiKey: this.apiKey,
           messages,
           model,
           temperature,
@@ -76,10 +124,7 @@ export class HackClubClient {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `API Error: ${response.status} ${response.statusText}`
-        );
+        throw new Error(await buildErrorMessage(response));
       }
 
       // Handle streaming response

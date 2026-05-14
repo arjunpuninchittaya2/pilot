@@ -30,6 +30,23 @@ VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.db.app
 
 Run the app: `npm run dev`
 
+**Quick CORS Debug (temporary)**
+
+If you need to test browser-side requests quickly, you can enable a debug proxy.
+
+1. Create or edit `.env.local`
+2. Add:
+
+```env
+VITE_DEBUG_CORS_PROXY=https://cors-anywhere.herokuapp.com/
+```
+
+3. Restart the dev server
+
+If you use the public `cors-anywhere` host, you usually must open `https://cors-anywhere.herokuapp.com/corsdemo` once and request temporary access before API calls succeed.
+
+This is for debugging only. It exposes requests through a third-party proxy and should not be used in production.
+
 **Publish your changes**
 
 Open [db.com](http://db.com) and click on Publish.

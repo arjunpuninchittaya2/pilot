@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,13 @@ export default function ApiKeyModal({ open, onOpenChange }) {
   const { apiKey: savedApiKey, saveApiKey } = useHackClub();
   const [apiKey, setApiKey] = useState(savedApiKey || '');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setApiKey(savedApiKey || '');
+      setError('');
+    }
+  }, [open, savedApiKey]);
 
   const handleSave = () => {
     if (!apiKey.trim()) {

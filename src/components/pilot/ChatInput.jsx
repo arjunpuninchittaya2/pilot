@@ -36,9 +36,12 @@ export default function ChatInput({ onSend, disabled }) {
       } catch (error) {
         console.error("Failed to load models:", error);
         setModels([]);
+        const message = String(error?.message || error || "Unknown error");
         toast({
           title: "Failed to load models",
-          description: error?.message ? String(error.message) : String(error),
+          description: message.includes("Failed to fetch")
+            ? "The browser blocked the request. The Hack Club API currently allows CORS only from ai.hackclub.com, so a Firebase-hosted client-only app cannot load models directly."
+            : message,
         });
       } finally {
         setLoadingModels(false);

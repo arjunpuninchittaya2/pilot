@@ -81,6 +81,13 @@ export default function Chat() {
     }
   }, [activeConvId, activeConv?.id]);
 
+  // Keep API key modal state in sync with persisted key load.
+  useEffect(() => {
+    if (isApiKeySet) {
+      setApiKeyModalOpen(false);
+    }
+  }, [isApiKeySet]);
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
