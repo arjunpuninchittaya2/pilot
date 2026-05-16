@@ -1,19 +1,20 @@
 /**
  * Hack Club API Client
  * Provides an interface to interact with the Hack Club AI API directly from the browser
- */
-
-const HACKCLUB_API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
-const SSE_DATA_FIELD_PREFIX = "data:";
-const DEFAULT_MODEL = "~anthropic/claude-sonnet-latest";
- * Direct browser calls to the Hack Club AI API.
+ *  * Direct browser calls to the Hack Club AI API.
  *
  * Note: this exposes the API key to the client and depends on the upstream
  * API allowing CORS from the current origin.
  */
 
+const HACKCLUB_API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
+const SSE_DATA_FIELD_PREFIX = "data:";
+const DEFAULT_MODEL = "~anthropic/claude-sonnet-latest";
+
 const API_BASE_URL = "https://ai.hackclub.com/proxy/v1";
-const DEBUG_CORS_PROXY = import.meta.env.VITE_DEBUG_CORS_PROXY || "";
+// Default to the public cors-anywhere demo proxy for local/dev usage.
+// Users can override with `VITE_DEBUG_CORS_PROXY` if needed.
+const DEBUG_CORS_PROXY = import.meta.env.VITE_DEBUG_CORS_PROXY || "https://cors-anywhere.herokuapp.com";
 
 const normalizeProxyPrefix = (value) => {
   if (!value) return "";
@@ -60,7 +61,7 @@ const buildErrorMessage = async (response) => {
     (response.status === 403 || response.status === 303 || normalized.includes("/corsdemo"));
 
   if (isCorsAnywhereBlocked) {
-    return `API Error: ${response.status} ${response.statusText}. Enable temporary access at ${CORS_ANYWHERE_DEMO_URL} and retry.`;
+    return `API Error: ${response.status} ${response.statusText}. The CORS proxy requires temporary access. Open ${CORS_ANYWHERE_DEMO_URL} in a new tab and click the "Request temporary access to the demo server" button, then retry.`;
   }
 
   if (parsedError) {
@@ -81,15 +82,17 @@ export class HackClubClient {
     }
 
     try {
-      const response = await fetch(`${PROXY_BASE_URL}/models`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          apiKey: this.apiKey,
-        }),
-      });
+        // Use GET for listing models and avoid sending a JSON Content-Type
+        // header which can trigger CORS preflight checks.
+        const headers = {
+          Authorization: `Bearer ${this.apiKey}`,
+        };
+        if (PROXY_PREFIX) headers["x-requested-with"] = "XMLHttpRequest";
+
+        const response = await fetch(buildRequestUrl('/models'), {
+          method: "GET",
+          headers,
+        });
 
       if (!response.ok) {
         throw new Error(await buildErrorMessage(response));
@@ -123,11 +126,9 @@ export class HackClubClient {
     } = options;
 
     try {
-      const response = await fetch(`${PROXY_BASE_URL}/chat/completions`, {
+      const response = await fetch(buildRequestUrl('/chat/completions'), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: buildHeaders(this.apiKey),
         body: JSON.stringify({
           messages,
           model,

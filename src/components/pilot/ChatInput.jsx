@@ -50,14 +50,40 @@ export default function ChatInput({ onSend, disabled }) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     setUploading(true);
-    const uploaded = [];
-    for (const file of files) {
-      const { file_url } = await db.integrations.Core.UploadFile({ file });
-      uploaded.push({ name: file.name, url: file_url, type: file.type });
+    try {
+      const uploaded = [];
+      for (const file of files) {
+        const isImage = file.type?.startsWith("image/");
+        
+        if (isImage) {
+          // For images, convert to base64 data URL for reliable API compatibility
+          const reader = new FileReader();
+          const base64Promise = new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+          });
+          
+          try {
+            const base64DataUrl = await base64Promise;
+            uploaded.push({ name: file.name, url: base64DataUrl, type: file.type });
+          } catch (error) {
+            console.error(`Failed to read image file ${file.name}:`, error);
+            throw new Error(`Failed to process image: ${file.name}`);
+          }
+        } else {
+          // For non-image files (PDFs, etc), upload normally
+          const { file_url } = await db.integrations.Core.UploadFile({ file });
+          uploaded.push({ name: file.name, url: file_url, type: file.type });
+        }
+      }
+      setAttachments((prev) => [...prev, ...uploaded]);
+    } catch (error) {
+      console.error("File upload error:", error);
+      // You might want to show a toast error here
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
-    setAttachments((prev) => [...prev, ...uploaded]);
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = "";
   };
 
   const removeAttachment = (idx) => {

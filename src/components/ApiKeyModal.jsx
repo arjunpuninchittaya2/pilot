@@ -99,26 +99,17 @@ export default function ApiKeyModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] border-[color:var(--border2)] bg-[color:var(--surface)] text-[color:var(--t1)] shadow-2xl">
         <DialogHeader>
-          <DialogTitle>Hack Club AI API Key</DialogTitle>
+          <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Enter your Hack Club AI API key to start chatting. Get your key from{' '}
-            <a
-              href="https://ai.hackclub.com/dashboard"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
-            >
-              the Hack Club dashboard
-            </a>
-            .
+            Add your Hack Club AI API key and choose your favorite models.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="api-key">API Key</Label>
+            <Label htmlFor="api-key" className="text-[color:var(--t1)]">API Key</Label>
             <Input
               id="api-key"
               type="password"
@@ -129,22 +120,22 @@ export default function ApiKeyModal({ open, onOpenChange }) {
                 setError('');
               }}
               onKeyDown={handleKeyDown}
-              className="font-mono"
+              className="font-mono border-[color:var(--border2)] bg-[color:var(--sidebar)] text-[color:var(--t1)] placeholder:text-[color:var(--t3)]"
             />
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <p className="text-xs text-gray-500">
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <p className="text-xs text-[color:var(--t3)]">
               Your API key is stored locally in your browser and never sent to third parties.
             </p>
           </div>
           <div className="grid gap-2">
-            <Label>Favorite Models</Label>
+            <Label className="text-[color:var(--t1)]">Favorite Models</Label>
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
                     aria-label="Select a model to add to favorites"
-                    className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-left"
+                    className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-md border border-[color:var(--border2)] bg-[color:var(--sidebar)] px-3 py-2 text-sm text-left text-[color:var(--t1)]"
                   >
                     <span className="truncate">
                       {loadingModels ? 'Loading models...' : selectedModel}
@@ -152,19 +143,19 @@ export default function ApiKeyModal({ open, onOpenChange }) {
                     <ChevronDownIcon className="w-4 h-4 flex-shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-popover border-border max-h-72 overflow-y-auto w-80 max-w-[var(--radix-dropdown-menu-trigger-width)] min-w-[var(--radix-dropdown-menu-trigger-width)]">
+                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto w-80 max-w-[var(--radix-dropdown-menu-trigger-width)] min-w-[var(--radix-dropdown-menu-trigger-width)] border-[color:var(--border2)] bg-[color:var(--sidebar)] text-[color:var(--t1)] shadow-2xl">
                   {modelOptions.map((modelName) => (
                     <DropdownMenuItem
                       key={modelName}
                       onClick={() => setSelectedModel(modelName)}
-                      className="text-sm"
+                      className="text-sm text-[color:var(--t1)] focus:bg-[color:var(--surface2)] focus:text-[color:var(--t1)]"
                     >
                       {modelName}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button type="button" variant="outline" onClick={handleAddFavoriteModel}>
+              <Button type="button" variant="outline" onClick={handleAddFavoriteModel} className="border-[color:var(--border2)] bg-[color:var(--surface2)] text-[color:var(--t1)] hover:bg-[color:var(--surface)] hover:text-[color:var(--t1)]">
                 Add
               </Button>
             </div>
@@ -172,13 +163,13 @@ export default function ApiKeyModal({ open, onOpenChange }) {
               {favoriteModels.map((favoriteModel) => (
                 <div
                   key={favoriteModel}
-                  className="flex items-center gap-1.5 bg-secondary rounded-lg px-2.5 py-1 text-xs"
+                  className="flex items-center gap-1.5 bg-[color:var(--surface2)] rounded-lg px-2.5 py-1 text-xs border border-[color:var(--border)]"
                 >
-                  <span className="max-w-[220px] truncate">{favoriteModel}</span>
+                  <span className="max-w-[220px] truncate text-[color:var(--t1)]">{favoriteModel}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveFavoriteModel(favoriteModel)}
-                    className="text-muted-foreground hover:text-foreground"
+                    className="text-[color:var(--t3)] hover:text-[color:var(--t1)]"
                     aria-label={`Remove ${favoriteModel} from favorites`}
                   >
                     <CloseIcon className="w-3 h-3" />
@@ -192,11 +183,12 @@ export default function ApiKeyModal({ open, onOpenChange }) {
         <DialogFooter>
           <Button
             variant="outline"
+            className="border-[color:var(--border2)] bg-[color:var(--surface2)] text-[color:var(--t1)] hover:bg-[color:var(--surface)] hover:text-[color:var(--t1)]"
             onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} className="bg-[color:var(--accent)] text-white hover:opacity-90">
             Save
           </Button>
         </DialogFooter>
